@@ -16,14 +16,15 @@ TEXTURE_CLASHES = {
 FATIGUE_TEXTURES = ["Heavy_Wool", "Corduroy", "Denim"]
 COLOR_CLASHES = {"Black": ["Navy", "Brown", "Earth"], "Navy": ["Black"], "Earth": ["Black", "Cool_Grey"]}
 
+# Added 'CORE' attribute. CORE items are exempt from environmental filtering.
 RAW_INVENTORY = [
-    {"Category": "Bottom", "Item": "Chinos | Olive Green", "Tier": "A", "Formality": 2, "Texture": "Cotton", "Color_Base": "Earth", "Pattern": "Solid", "Seasons": ["Autumn"], "Temps": ["Temperate"], "Weather": ["Dry"]},
-    {"Category": "Bottom", "Item": "Jeans | Dark Indigo", "Tier": "A", "Formality": 1, "Texture": "Denim", "Color_Base": "Navy", "Pattern": "Solid", "Seasons": ["Autumn", "Winter"], "Temps": ["Cold"], "Weather": ["Dry"]},
-    {"Category": "Shirt", "Item": "OCBD | Light Blue", "Tier": "C", "Formality": 2, "Texture": "Cotton", "Color_Base": "Navy", "Pattern": "Solid", "Seasons": ["Autumn", "Winter"], "Temps": ["Cold"], "Weather": ["Dry"]},
-    {"Category": "Shirt", "Item": "Flannel | Red Check", "Tier": "B", "Formality": 1, "Texture": "Cotton", "Color_Base": "Earth", "Pattern": "Checkered", "Seasons": ["Autumn", "Winter"], "Temps": ["Cold"], "Weather": ["Dry"]},
-    {"Category": "Layer", "Item": "Cashmere Crew | Anthracite", "Tier": "A", "Formality": 2, "Texture": "Heavy_Wool", "Color_Base": "Cool_Grey", "Pattern": "Solid", "Seasons": ["Autumn", "Winter"], "Temps": ["Cold"], "Weather": ["Dry"]},
-    {"Category": "Outer", "Item": "Car Coat | Navy Waterproof", "Tier": "A", "Formality": 2, "Texture": "Technical", "Color_Base": "Navy", "Pattern": "Solid", "Seasons": ["Autumn", "Winter"], "Temps": ["Cold"], "Weather": ["Wet"]},
-    {"Category": "Footwear", "Item": "Lace up Boots | Brown Leather", "Tier": "A", "Formality": 2, "Texture": "Leather", "Color_Base": "Earth", "Pattern": "Solid", "Seasons": ["Autumn", "Winter"], "Temps": ["Cold"], "Weather": ["Dry"]}
+    {"Category": "Bottom", "Item": "Chinos | Olive Green", "Tier": "A", "Formality": 2, "Texture": "Cotton", "Color_Base": "Earth", "Pattern": "Solid", "Seasons": ["Autumn"], "Temps": ["Temperate"], "Weather": ["Dry"], "CORE": False},
+    {"Category": "Bottom", "Item": "Jeans | Dark Indigo", "Tier": "A", "Formality": 1, "Texture": "Denim", "Color_Base": "Navy", "Pattern": "Solid", "Seasons": ["Autumn", "Winter", "Spring", "Summer"], "Temps": ["Cold", "Temperate", "Warm"], "Weather": ["Dry", "Wet"], "CORE": True},
+    {"Category": "Shirt", "Item": "OCBD | Light Blue", "Tier": "C", "Formality": 2, "Texture": "Cotton", "Color_Base": "Navy", "Pattern": "Solid", "Seasons": ["Autumn", "Winter", "Spring", "Summer"], "Temps": ["Cold", "Temperate", "Warm"], "Weather": ["Dry", "Wet"], "CORE": True},
+    {"Category": "Shirt", "Item": "Flannel | Red Check", "Tier": "B", "Formality": 1, "Texture": "Cotton", "Color_Base": "Earth", "Pattern": "Checkered", "Seasons": ["Autumn", "Winter"], "Temps": ["Cold", "Temperate"], "Weather": ["Dry", "Wet"], "CORE": False},
+    {"Category": "Layer", "Item": "Cashmere Crew | Anthracite", "Tier": "A", "Formality": 2, "Texture": "Heavy_Wool", "Color_Base": "Cool_Grey", "Pattern": "Solid", "Seasons": ["Autumn", "Winter", "Spring"], "Temps": ["Cold", "Temperate"], "Weather": ["Dry", "Wet"], "CORE": False},
+    {"Category": "Outer", "Item": "Car Coat | Navy Waterproof", "Tier": "A", "Formality": 2, "Texture": "Technical", "Color_Base": "Navy", "Pattern": "Solid", "Seasons": ["Autumn", "Winter", "Spring"], "Temps": ["Cold", "Temperate"], "Weather": ["Dry", "Wet"], "CORE": False},
+    {"Category": "Footwear", "Item": "Lace up Boots | Brown Leather", "Tier": "A", "Formality": 2, "Texture": "Leather", "Color_Base": "Earth", "Pattern": "Solid", "Seasons": ["Autumn", "Winter", "Spring"], "Temps": ["Cold", "Temperate"], "Weather": ["Dry", "Wet"], "CORE": False}
 ]
 
 def load_data():
@@ -32,12 +33,14 @@ def load_data():
     return df
 
 def get_valid_inventory(df, season, temp, weather, allowed_formalities):
-    return df[
+    # Items are valid if CORE is True OR they match the environment
+    is_core = df['CORE'] == True
+    matches_env = (
         df['Seasons'].apply(lambda x: season in x) &
         df['Temps'].apply(lambda x: temp in x) &
-        df['Weather'].apply(lambda x: weather in x) &
-        df['Formality'].isin(allowed_formalities)
-    ]
+        df['Weather'].apply(lambda x: weather in x)
+    )
+    return df[(is_core | matches_env) & df['Formality'].isin(allowed_formalities)]
 
 # --- 2. LOGIC ---
 def get_best_item(valid_pool, category, target_formality, anchor_color, current_outfit_items):
