@@ -46,7 +46,7 @@ def get_best_item(valid_pool, category, target_formality, anchor_color, current_
         weight = row['Tier_Weight']
         diff = row['Formality'] - target_formality
         if row['Formality'] == 3 or abs(diff) > 1: return 0
-        if diff > 0: weight *= 0.2  # Harder to dress up
+        if diff > 0: weight *= 0.2  
         if row.get('Color_Base') in COLOR_CLASHES.get(anchor_color, []): return 0 
         return weight
     pool['Final_Weight'] = pool.apply(calculate_weight, axis=1)
@@ -84,10 +84,13 @@ with st.sidebar:
     context = st.selectbox("Context", list(CONTEXTS.keys()))
     
     valid_df = get_valid_inventory(df, season, temp, weather, CONTEXTS[context])
-    anchor = st.selectbox("Pick Anchor", valid_df['Item'].tolist())
     
-    if st.button("Generate Outfit"):
-        st.session_state.outfit = generate_full_outfit(valid_df, anchor)
+    if not valid_df.empty:
+        anchor = st.selectbox("Pick Anchor", valid_df['Item'].tolist())
+        if st.button("Generate Outfit"):
+            st.session_state.outfit = generate_full_outfit(valid_df, anchor)
+    else:
+        st.warning("No items match these conditions.")
 
 if 'outfit' in st.session_state and st.session_state.outfit:
     for cat, item in st.session_state.outfit.items():
